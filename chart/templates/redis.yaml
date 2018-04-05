@@ -1,0 +1,30 @@
+{{- $app := printf "%s-mongooseim" .Values.resource.name -}}
+{{- $spec := dict }}
+{{- $_ := merge $spec .Values.resource.spec .Values.default -}}
+{{- if $spec.redis -}}
+apiVersion: database.stei.gr/v1alpha1
+kind: Redis
+metadata:
+  name: {{ $app }}
+  labels:
+    app: {{ .Values.resource.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{- if $spec.nodeSelector }}
+  nodeSelector:
+{{ toYaml $spec.nodeSelector | indent 4 }}
+{{ end -}}
+{{- if $spec.tolerations }}
+  tolerations:
+{{ toYaml $spec.tolerations | indent 4 }}
+{{ end }}
+  secrets:
+    - name: {{ $app }}-redis-credentials
+      variables:
+        - name: REDIS_HOST
+          format: "%h"
+        - name: REDIS_PORT
+          format: "%P"
+{{- end -}}

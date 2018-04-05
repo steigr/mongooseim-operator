@@ -1,6 +1,20 @@
 default:
   size: 1
   image:
-    name: nginx
-    tag: latest
+    name: quay.io/steigr/mongooseim
+    tag: v2.1.1
     pullPolicy: Always
+  config:
+    loglevel: "3"
+    domain: localhost
+  # redis: true
+  database:
+    type: postgres
+    # username: mongooseim
+    # password: changeme
+    # name: mongooseimdb
+  storage:
+    class: slow
+    size: 1Gi
+  service:
+    type: ClusterIP

@@ -1,0 +1,18 @@
+{{- $app := printf "%s-mongooseim" .Values.resource.name -}}
+{{- $spec := dict }}
+{{- $_ := merge $spec .Values.resource.spec .Values.default -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $app }}
+  labels:
+    app: {{ $app }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  NODE_ROLE: master
+  AUTH_METHOD: internal
+  SESSION_METHOD: {{ if $spec.redis }}redis{{ else }}mnesia{{ end }}
+  XMPP_DOMAIN: {{ $spec.config.domain }}
+  LOGLEVEL: {{ $spec.config.loglevel | quote }}

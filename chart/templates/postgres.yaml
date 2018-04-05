@@ -1,0 +1,37 @@
+{{- $app := printf "%s-mongooseim" .Values.resource.name -}}
+{{- $spec := dict }}
+{{- $_ := merge $spec .Values.resource.spec .Values.default -}}
+{{- if eq $spec.database.type "postgres" -}}
+apiVersion: database.stei.gr/v1alpha1
+kind: Postgres
+metadata:
+  name: {{ $app }}
+  labels:
+    app: {{ .Values.resource.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{- if $spec.nodeSelector }}
+  nodeSelector:
+{{ toYaml $spec.nodeSelector | indent 4 }}
+{{ end -}}
+{{- if $spec.tolerations }}
+  tolerations:
+{{ toYaml $spec.tolerations | indent 4 }}
+{{ end }}
+  username: {{ default $app $spec.database.username }}
+  password: {{ default $app $spec.database.password }}
+  database: {{ default $app $spec.database.name }}
+  secrets:
+    - name: {{ $app }}-database-credentials
+      variables:
+        - name: PGSQL_HOST
+          format: "%h"
+        - name: PGSQL_DB
+          format: "%d"
+        - name: PGSQL_USER
+          format: "%u"
+        - name: PGSQL_PASSWORD
+          format: "%p"
+{{- end -}}

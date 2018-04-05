@@ -1,0 +1,30 @@
+{{- $app := printf "%s-mongooseim" .Values.resource.name -}}
+{{- $spec := dict }}
+{{- $_ := merge $spec .Values.resource.spec .Values.default -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $app }}
+  labels:
+    app: {{ $app }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ $spec.service.type }}
+  selector:
+    app: {{ $app }}
+    resource: mongooseim
+  ports:
+    - name: http
+      port: 5280
+      targetPort: http
+      protocol: TCP
+    - name: xmpp-c2s
+      port: 5222
+      targetPort: xmpp-c2s
+      protocol: TCP
+    - name: xmpp-s2s
+      port: 5269
+      targetPort: xmpp-s2s
+      protocol: TCP

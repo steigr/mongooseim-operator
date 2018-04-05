@@ -7,19 +7,25 @@
 apiVersion: app.coreos.com/v1alpha1
 kind: ClusterServiceVersion-v1
 metadata:
-  name: example-app-operator.YOUR_VERSION_HERE
+  name: mongooseim-operator.YOUR_VERSION_HERE
   namespace: YOUR_NAMESPACE_HERE
 spec:
   install: 
     strategy: deployment
     spec:
       permissions:
-      - serviceAccountName: example-app-operator
+      - serviceAccountName: mongooseim-operator
         rules:
         - apiGroups:
-          - example.com
+          - app.stei.gr
           resources:
-          - example-apps
+          - mongooseims
+          verbs:
+          - "*"
+        - apiGroups:
+          - database.stei.gr
+          resources:
+          - "*"
           verbs:
           - "*"
         - apiGroups:
@@ -27,6 +33,9 @@ spec:
           resources:
           - pods
           - events
+          - secrets
+          - services
+          - configmaps
           - namespaces
           verbs:
           - "*"
@@ -40,52 +49,51 @@ spec:
           - apps
           - extensions
           resources:
-          - deployments
+          - statefulsets
+          - ingresses
           verbs:
           - "*"
       deployments: 
-      - name: example-app-operator
+      - name: mongooseim-operator
         spec:
           replicas: 1
           selector:
             matchLabels:
-              app: example-app-operator
+              app: mongooseim-operator
           template:
             metadata:
               labels:
-                app: example-app-operator
+                app: mongooseim-operator
             spec:
               containers:
                 - name: sao
-                  image: YOUR_REPO_IMAGE_HERE
+                  image: YOUR_REPO_IMAGE_HERE:YOUR_VERSION_HERE
                   ports:
                     - containerPort: 8080
                       protocol: TCP
                   imagePullPolicy: Always
               restartPolicy: Always
               terminationGracePeriodSeconds: 5
-              serviceAccountName: example-app-operator
-              serviceAccount: example-app-operator
+              serviceAccountName: mongooseim-operator
+              serviceAccount: mongooseim-operator
   customresourcedefinitions:
     owned:
-      - description: Represents a cluster of example apps
-        displayName: Example App
-        kind: ExampleApp
-        name: example-apps.example.com
+      - description: Mongooseim
+        displayName: Mongooseim
+        kind: Mongooseim
+        name: mongooseims.app.stei.gr
         version: v1alpha1
         resources:
-          - kind: Deployment
+          - kind: StatefulSet
             version: v1beta2
           - kind: ReplicaSet
             version: v1beta2
           - kind: Pod
             version: v1
-        specDescriptors:
-          - description: The desired number of member Pods for the deployment.
-            displayName: Size
-            path: size
-            x-descriptors:
-              - 'urn:alm:descriptor:com.tectonic.ui:podCount'
+          - kind: Service
+            version: v1
+          - kind: ConfigMap
+            version: v1
         statusDescriptors:
           - description: The current status of the application.
             displayName: Status
@@ -98,18 +106,21 @@ spec:
             x-descriptors:
               - 'urn:alm:descriptor:io.kubernetes.phase:reason'
   keywords:
-    - example
-    - app
-  displayName: Example Application
+    - mongooseim
+    - xmpp
+  displayName: Mongooseim
   provider:
-    name: Example Corp
-    url: www.example.com
+    name: steigr
+    url: blog.stei.gr/operator/mongooseim
+  icon:
+    - base64data: >-
+        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
   maturity: alpha
   version: YOUR_SEM_VERSION_HERE
   maintainers:
-    - email: corp@example.com
-      name: Some Corp
+    - email: me@stei.gr
+      name: steigr
   description: Main enterprise application providing business critical features with high availabilty and no manual intervention.
   labels:
-    alm-owner-enterprise-app: example-app-operator
-    alm-status-descriptors: example-app-operator.YOUR_VERSION_HERE
+    alm-owner-enterprise-app: mongooseim-operator
+    alm-status-descriptors: mongooseim-operator.YOUR_VERSION_HERE

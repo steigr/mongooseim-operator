@@ -1,0 +1,70 @@
+{{- $app := printf "%s-mongooseim" .Values.resource.name -}}
+{{- $spec := dict }}
+{{- $_ := merge $spec .Values.resource.spec .Values.default -}}
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  name: {{ $app }}
+  labels:
+    app: {{ $app }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: mongooseim
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $app }}
+      resource: mongooseim
+  template:
+    metadata:
+      labels:
+        app: {{ $app }}
+        resource: mongooseim
+    spec:
+{{- if $spec.nodeSelector }}
+      nodeSelector:
+{{ toYaml $spec.nodeSelector | indent 8 }}
+{{ end -}}
+{{- if $spec.tolerations }}
+      tolerations:
+{{ toYaml $spec.tolerations | indent 8 }}
+{{ end }}
+      containers:
+        - name: mongooseim
+{{- with $spec.image }}
+          image: {{ .name }}:{{ .tag }}
+          imagePullPolicy: {{ .pullPolicy }}{{ end }}
+          ports:
+            - name: http
+              containerPort: 5280
+            - name: xmpp-c2s
+              containerPort: 5222
+            - name: xmpp-s2s
+              containerPort: 5269
+          envFrom:
+            - configMapRef:
+                name: {{ $app }}
+            - secretRef:
+                name: {{ $app }}-database-credentials
+            {{ if $spec.redis -}}
+            - secretRef:
+                name: {{ $app }}-redis-credentials {{- end }}
+          volumeMounts:
+            - name: {{ $app }}
+              mountPath: /var/lib/mongooseim
+          resources:
+{{ toYaml $spec.resources | indent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ $app }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+{{ if $spec.storage.class }}
+        storageClassName: {{ $spec.storage.class }}
+{{ end }}
+        resources:
+          requests:
+            storage: {{ $spec.storage.size }}
