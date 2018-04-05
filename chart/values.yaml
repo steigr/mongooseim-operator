@@ -1,1 +1,6 @@
-image: nginx
+default:
+  size: 1
+  image:
+    name: nginx
+    tag: latest
+    pullPolicy: Always
